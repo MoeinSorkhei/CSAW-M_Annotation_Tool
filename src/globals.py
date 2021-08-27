@@ -16,7 +16,7 @@ params = {
     "robust_min_length": 4,  # minimum length of sorted list valid for doing ternary, ternary does not makes sense for length smaller than this
     "bin_rep_type": 'random',  # or 'last': specifies how the bin representative should be chosen
 
-    "max_imgs_per_session": 10000,
+    "max_imgs_per_session": 100000,
     "resize_factor": 1  # increase this to a larger int if you want images to be shown smaller
 }
 
