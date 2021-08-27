@@ -303,11 +303,16 @@ def update_binary_inds(window, rate):
         calc_and_set_mid_for_train(window)
 
     else:  # for data_mode test
+        # note: when updating mid: one could say that when rate == '1', instead of window.low = mid it is better to do window.low = mid + 1.
+        # That is right, but even with this current implementation we avoid showing duplicate comparisons. The function _rate_automatically() in window.py
+        # always checks whther the left/right comparison is already shown to the radiologist, and if so, it will automatically
+        # changes window attrobutes based on the already received rate and shows a new pair of images.
+        # (the same thing goes for rate == '2') and also when updating ternary anchors.
+        # Based on this, I currently decide to not change the implementation (27 Aug 2021).
         if rate == '1':  # rated as harder, go to the right half of the list
             window.low = mid if (window.high - window.low) > 1 else window.high
             log(f'In [binary_search_step]: '
                 f'low increased to {window.low}')
-
         else:  # rated as easier, go to the left half of the list
             window.high = mid
             log(f'In [binary_search_step]: '
