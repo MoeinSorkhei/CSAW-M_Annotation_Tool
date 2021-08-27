@@ -28,7 +28,7 @@ Below you can see and example window of our annotation tool with query and refer
 
 * `--annotator`: the name of the annotator, this should always be provided when beginning a session for rating test/train images. 
 
-* `--new` or `--already`: In general, the programs could be run in several sessions (e.g. sorting 500 images in 10 sessions, in each of which 50 images are sorted). Number of images per seesion is defined in `globals.max_imgs_per_session`). In case an annotator wants to sort images in multiple sessions, for starting the first session they should use `--new`, and for the rest of the sessions they should use `--already`. By default the program runs in one session.
+* `--new` or `--already`: If it is the first time an annotator is using the tool, they should use `--new`, otherwise they should use `--already`.
 
 * `--max_imgs_per_session`: the number images that one should rate in each session. This could be set to a small number of shorter sessions.
 
