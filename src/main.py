@@ -10,12 +10,11 @@ def read_args_and_adjust():
     parser.add_argument('--new', action='store_true')
     parser.add_argument('--already', action='store_true')
     parser.add_argument('--session_name', type=str, default='sort')
-    parser.add_argument('--data_mode', type=str, default='train')
-    parser.add_argument('--n_bins', type=int, default=12)
+    parser.add_argument('--data_mode', type=str)
+    parser.add_argument('--n_bins', type=int)
     parser.add_argument('--resize_factor', type=int)
     parser.add_argument('--max_imgs_per_session', type=int)
     parser.add_argument('--ui_verbosity', type=int)   # set be set to 2 for moderate verbosity
-
     parser.add_argument('--debug', action='store_true')
 
     arguments = parser.parse_args()
