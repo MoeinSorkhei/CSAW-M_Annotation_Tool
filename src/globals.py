@@ -4,13 +4,9 @@ import os
 debug = False
 
 params = {
-    "test_basenames": os.path.join('..', 'data', 'test_basenames.txt'),
-    "train_basenames": os.path.join('..', 'data', 'train_basenames.txt'),
-
+    # "data_path": os.path.join('..', 'data'),
     "test_imgs_dir": os.path.join('..', 'data', 'test_imgs'),  # for test data
     "train_imgs_dir": os.path.join('..', 'data', 'train_imgs'),  # for train data
-
-    "data_path": os.path.join('..', 'data'),
 
     "output_path_test": os.path.join('..', 'outputs_test'),
     "output_path_train": os.path.join('..', 'outputs_train'),
@@ -21,7 +17,7 @@ params = {
     "bin_rep_type": 'random',  # or 'last': specifies how the bin representative should be chosen
 
     "max_imgs_per_session": 10000,
-    "resize_factor": 1
+    "resize_factor": 1  # increase this to a larger int if you want images to be shown smaller
 }
 
 # seed list as the starting point to sort test data

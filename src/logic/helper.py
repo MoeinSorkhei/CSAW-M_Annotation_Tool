@@ -1,16 +1,7 @@
 import os
 import json
-from time import gmtime, strftime
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 import glob
 import datetime
-from shutil import copyfile
-import random
-import shutil
 
 import globals
 
@@ -27,11 +18,6 @@ def make_dir_if_not_exists(directory, verbose=True):  # note the use of verbose
         os.makedirs(directory)
         if verbose:  # note: in case of using verbose=True, 'output_path' should have already been set in globals.params
             log(f'In [make_dir_if_not_exists]: created path "{directory}"')
-
-
-def multi_log(to_be_logged):
-    for string in to_be_logged:
-        log(string)
 
 
 def log(string, no_time=False):
@@ -72,11 +58,6 @@ def pure_names(the_list, sep):
 
 def replace_all(lst, old_str, new_str):
     return [file.replace(old_str, new_str) for file in lst]
-
-
-def prepend_to_paths(the_list, string):
-    assert string.endswith('/'), 'String should end with /'
-    return [f'{string}{filename}' for filename in the_list]
 
 
 def files_with_suffix(directory, suffix):
@@ -136,21 +117,6 @@ def get_datetime(raw=False, underscored=False):
     return datetime.datetime.now().strftime("%Y-%m-%d at %H:%M:%S")
 
 
-def print_global_paths(annotator=None):
-    orig_rating_str = f'\norig_ratings: {globals.params["orig_ratings"]}' if 'orig_ratings' in globals.params.keys() else ''
-    log(f"\n\n\n\n{'#' * 150}", no_time=True)
-    log(
-        f'In [main]: Checking paths for annotator: {annotator} and output_path: "{globals.params["output_path"]}" done.\n'
-        f"output_path: {globals.params['output_path']}\n"
-        f"ratings: {globals.params['ratings']}"
-        f"discarded: {globals.params['discarded']}\n"
-        f"error: {globals.params['error']}\n"
-        f"sorted: {globals.params['sorted']}\n"
-        f"aborted: {globals.params['aborted']}\n"
-        f"{orig_rating_str}")
-    log(f"{'#' * 150}", no_time=True)
-
-
 def subtract_lists(list1, list2):
     return [x1 - x2 for (x1, x2) in zip(list1, list2)]
 
@@ -202,12 +168,6 @@ def _parse_ratings():
         left_file, right_file, rate, annotator, timestamp = rating.split('$')
         parsed_ratings.append((left_file.strip(), right_file.strip(), rate.strip(), annotator.strip(), timestamp.strip()))
     return parsed_ratings
-
-
-def left_right_substr(string):
-    # given a string like "2.dcm $ 33.dcm $ 9 $ Moein $ 2020-09-22_09:23:22", it returns "2.dcm $ 33.dcm"
-    left, right = parsed(string, '$')[:2]
-    return f'{left} $ {right}'
 
 
 def parsed(string, character):

@@ -1,12 +1,11 @@
 from tkinter import *
 import time
 from copy import deepcopy
-
-from .logical import *
-
 import traceback
 from tkinter import messagebox
 import tkinter
+
+from .logical import *
 
 
 def show_visual_error(title, message):
@@ -33,37 +32,6 @@ def set_tk_error_func():
 
 class Window:
     def __init__(self, master, cases, already_sorted, session_name, data_mode, annotator, ui_verbosity, n_bins=None):
-        """
-        :param master:
-        :param cases:
-        :param already_sorted:
-        :param data_mode:
-        :param n_bins:
-
-        Notes:
-            - Regarding prev_results:
-              it is tuple (img, rate) for 'single' show_mode (which will not be used)
-
-              or (low, high, rate, insertion_index, mid_img) for test data where insertion index refers to the index
-              we used for inserting an image into the sorted_list and mid_image is the final middle image used for comparison
-              before insertion. The last two are available only if insertion has occurred, otherwise the tuple would
-              only have (low, high, rate) values.
-
-              or (low, high, rate, bin, pos) for train where bin refers to the bin we inserted and the position for
-              insertion ONLY if insertions has occurred. Otherwise the tuple would be (low, high, rate).
-
-
-        Important notes about the window attributes and prev_result for ternary search:
-            - The prev_result also has these attributes of the previous window: low, high, m1_rate, m2_rate
-            - Possible situations:
-              1) m1_rate = None, m2_rate = None: either getting rate for m1 or doing usual check (will be checked based on the
-              robust_checking_needed function)
-              2) m1_rate = some number, m2_rate = None: we are getting rate for m2
-
-            - The 'aborted' attribute in prev_result is only to show if the rating that happened in the previous window
-              resulted in aborting or not. The window itself does not have this attribute, this attributes is added to
-              prev_result a key is pressed on the window.
-        """
         self.master = master
         self.cases = cases
         self.session_name = session_name
@@ -114,10 +82,9 @@ class Window:
                 self.mid = None
                 log(f'In [__init__]: initializing mid...')
                 calc_and_set_mid_for_train(self)
-                # self.mid = None  # will be updated in the update_files function (and update_binary_inds)
-
-        else:  # variability
-            self.current_index = 0
+        else:  # variability (not done in the CSAW-M paper)
+            # self.current_index = 0
+            raise NotImplementedError(f'session_name "{session_name} not implemented in window"')
 
         self.compute_case_number()
         log_current_index(self, called_from='__init__')
@@ -343,7 +310,7 @@ class Window:
                 f'Right: {self.curr_right_file}')
 
     def _load_images_into_panels(self):
-        left_image, right_image = read_and_resize_imgs(self, threading=True)
+        left_image, right_image = load_left_right_images(self, threading=True)
         self.left_photo = ImageTk.PhotoImage(image=left_image)
         self.right_photo = ImageTk.PhotoImage(image=right_image)
         self.left_photo_panel.configure(image=self.left_photo)
@@ -352,35 +319,12 @@ class Window:
         self.right_photo_panel.pack(side=RIGHT, padx=5, pady=5)
 
     def update_photos_and_stats(self, frame, files_already_updated):
-        """
-        :param files_already_updated:
-        :param frame:
-        :return:
-
-        Notes:
-            - This function is a UI-level function, In this function, there is no need to check prev_result, all the
-              logical values e.g. indices have already been changed in the previous functions (e.g. show_previous_case
-              or keyboard_press). It only needs the current low and high indices to update the images.
-
-            - For either 'previous' or 'next' directions, this function is called once the low and high indices are updated and the
-              recent item added to the list is removed (if index has changed), so it simply used the low and high inds
-              to again show the right image.
-
-
-        Possible configurations in a window for the robust search:
-            - self.low_consistency == 'unspecified' and self.high_consistency == 'unspecified', in which case we show
-              the left image and update low_consistency based on the rate
-            - self.low_consistency is True and self.high_consistency == 'unspecified', in which case the right image is shown
-            - low_consistency and high_consistency are both True, in which case the middle image is show. We had already
-              aborted the case if one of them have been False.
-        """
         if frame == 'final':
             self.left_photo_panel.pack_forget()
             self.right_photo_panel.pack_forget()
             if globals.debug:
                 self.left_caption_panel.pack_forget()
                 self.right_caption_panel.pack_forget()
-
         else:
             if not files_already_updated:
                 self.update_files()
@@ -421,9 +365,8 @@ class Window:
 
     def update_frame(self, rate=None, files_already_updated=False):
         """
-        Important:
-            - ALl the logical changes e.g. changing the indexes etc. should be done before calling this function. This
-              only changes the stuff related to UI.
+        ALl the logical changes e.g. changing the indexes etc. should be done before calling this function. This function
+        only changes the stuff related to UI, assuming that the window attributes have been adjusted properly.
         """
         # ======== final page
         if self.current_index == len(self.cases):
@@ -460,17 +403,8 @@ class Window:
 
     def show_previous_case(self, event):
         """
-        :param event:
-        :return:
-        Notes:
-            - ALL the logical steps (updating indices and the list) happen in this function before updating the frame
-              to show the previous case.
-
-        Procedure: We undo all the steps that have been done in the keyboard_press function.
-            1. If an item has been added to the list, we remove it.
-            2. We revert the low and high indices to the previous state.
-            3. We decrement the index of the reference image (left image) if the index was increased the previous step.
-            4. Once all the indices and the list have been reverted, we update the frame.
+        ALL the logical steps (updating indices and the list) happen in this function before updating the frame
+        to show the previous case. We undo all the steps that have been done in the keyboard_press function.
         """
         log(f'In [show_previous_case]: Clicked "show_previous_case".')
 
@@ -543,35 +477,21 @@ class Window:
                 self.prev_result['m1_rep'] = self.m1_rep
                 self.prev_result['m2_rep'] = self.m2_rep
                 self.prev_result['rep'] = self.rep
-        else:  # variability
-            self.prev_result = {
-                'current_index': self.current_index,
-                'rate': eval(pressed),
-                'aborted': False,
-            }
+        else:  # variability (not done in the CSAW-M paper)
+            # self.prev_result = {
+            #     'current_index': self.current_index,
+            #     'rate': eval(pressed),
+            #     'aborted': False,
+            # }
+            raise NotImplementedError(f'session_name "{self.session_name}" not implemented')
 
         log(f'In [keep_current_state_in_prev_result]: now prev_result is: \n{shorten(deepcopy(self.prev_result))}\n')
 
     def keyboard_press(self, event):
         """
-        :param event:
-        :return:
-
-        Notes:
-            - ALL the logical steps (saving previous result, keeping track of current indices, updating indices and list etc.)
-              happen in this function before updating the frame to show the next case.
-
-        Procedure:
-            1. If a button is pressed, it means that the previous result is confirmed, ie, the radiologist does not want
-               to go to the previous window. So the prev_result will be saved.
-            2. Once the previous result is saved, current indices (along with the rate) will replace the previous result.
-            3. Once we take note of current indices and keep them in prev_result, we update the indices using binary search.
-            4. The binary search function updates the indices and if the search has completed (or 9 is pressed), it inserts
-               the new image to the list, and adds the insertion index and the previous mid_img to prev_result so we could
-               use them again if the radiologist wants to get back in the next window.
-            5. If insertion has occurred, the index of the current left image will be incremented to show the next image.
-            6. Now that the indices are updated, update_frame function updates the window in a UI-level based on the
-               updated low and high indices.
+        ALL the logical steps (saving previous result, keeping track of current indices, updating indices and list etc.)
+        happen in this function before updating the frame to show the next case.
+        At each point in time, we can go back to one previous state (prev_result).
         """
         def _rate_automatically():
             log(f'\n{"*" * 10}', no_time=True)
@@ -704,8 +624,9 @@ class Window:
                 if self.data_mode == 'test' and not insert_happened and not abort_happened and not robust_checking_needed(self):
                     files_already_updated = _rate_automatically()
 
-            else:  # for variability
-                self.keep_current_state_in_prev_result(pressed)
-                self.current_index += 1
+            else:  # for variability (not done in the CSAW-M paper)
+                # self.keep_current_state_in_prev_result(pressed)
+                # self.current_index += 1
+                raise NotImplementedError(f'session_name {self.session_name} not implemented')
 
             self.update_frame(eval(pressed), files_already_updated)

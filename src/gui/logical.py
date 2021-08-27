@@ -1,10 +1,9 @@
-from threading import Thread
 import concurrent.futures
+import math
 
 from logic import *
 import logic
 import globals
-import math
 
 
 # ========== functions for checking things/resetting
@@ -68,13 +67,9 @@ def matches_binary_insert_rule(window, rate):
         if low_high_diff == 2 or low_high_diff == 1 or low_high_diff == 0:
             log(f'In [matches_binary_insert_rule]: matches rule because low_high_diff = {low_high_diff}')
             return True
-    else:  # test rules ( should be checked again later - if needed)
+    else:  # test rules
         if rate == '9' or window.high == window.low or (window.high - window.low == 1 and rate == '2'):
             return True
-    # special insertion rule for tran data with random representatives
-    # if window.data_mode == 'train' and globals.params['bin_rep_type'] == 'random' \
-    #         and ((window.high - window.low == 1 and rate == '1') or (window.high - window.low == 2)):
-    #     return True
     return False
 
 
@@ -182,14 +177,6 @@ def revert_attributes(window):
 
 
 def reset_attributes(window, exclude_inds=False, new_comp_level=None):
-    """
-    The behavior of this function depends on whether we are dealing with test or train data.
-
-    :param new_comp_level:
-    :param exclude_inds:
-    :param window:
-    :return:
-    """
     if not exclude_inds:
         if window.data_mode == 'test':
             window.low = 0
@@ -300,15 +287,6 @@ def calc_and_set_mid_for_train(window):
 
 
 def update_binary_inds(window, rate):
-    """
-    This will update the low and high indices for the binary search. In case binary search is completed or 9 is
-    pressed by the radiologist, it inserts the image in the right position and resets the low and high indices.
-    The behavior of this function depends on whether we are dealing with test or train data.
-
-    :param window:
-    :param rate:
-    :return:
-    """
     mid = (window.low + window.high) // 2 if window.data_mode == 'test' else window.mid  # for train data, this represents bin number
     log(f'In [update_binary_inds]: mid is: {mid}')
 
@@ -324,7 +302,7 @@ def update_binary_inds(window, rate):
         log(f'In [update_binary_inds]: calling calc_and_set_mid_for_train...')
         calc_and_set_mid_for_train(window)
 
-    else:  # previous version for test mode (should be checked again - if needed)
+    else:  # for data_mode test
         if rate == '1':  # rated as harder, go to the right half of the list
             window.low = mid if (window.high - window.low) > 1 else window.high
             log(f'In [binary_search_step]: '
@@ -340,18 +318,9 @@ def update_binary_inds(window, rate):
 
 
 def insert_with_ternary_inds(window, anchor, item):
-    """
-    Note: insert_with_ternary_inds only happens if 9 is pressed, it is assumed that ternary indices are never equal.
-    :param anchor:
-    :param window:
-    :param anchor_name:
-    :param item:
-    :return:
-    """
     if window.data_mode == 'test':
         insert_to_list(window.sorted_list, anchor, item)
         window.prev_result['insert_index'] = anchor
-
     else:
         pos = 'last' if globals.params['bin_rep_type'] == 'random' else 'before_last'
         insert_into_bin_and_save(which_bin=anchor, pos=pos, img=item)
@@ -360,8 +329,8 @@ def insert_with_ternary_inds(window, anchor, item):
 
 
 def insert_with_binary_inds(window, rate, item):
-    # for test data
-    mid = (window.low + window.high) // 2 if window.data_mode == 'test' else window.mid  # for train data, this represents bin number
+    # for test data, we always round down to get the mid index, for train data, we do roudning in a symmteric way (see the paper)
+    mid = (window.low + window.high) // 2 if window.data_mode == 'test' else window.mid  # for train data, mid represents bin number
     log(f'In [insert_with_binary_inds]: mid is: {mid}')
 
     if window.data_mode == 'test':
@@ -380,9 +349,9 @@ def insert_with_binary_inds(window, rate, item):
         if window.high - window.low == 2:
             which_bin = mid - 1 if rate == '2' else mid if rate == '9' else mid + 1
         elif window.high - window.low == 1:
-            if is_in_lower_half(window):
+            if is_in_lower_half(window):  # for lower_half bins, we have already rounded up to get mid bin
                 which_bin = mid if (rate == '9' or rate == '1') else mid - 1
-            elif is_in_higher_half(window):
+            elif is_in_higher_half(window):  # for higher_half we have already rounded down to get mid bin
                 which_bin = mid if (rate == '9' or rate == '2') else mid + 1
             else:
                 raise NotImplementedError
@@ -390,7 +359,7 @@ def insert_with_binary_inds(window, rate, item):
             which_bin = mid  # bin number to insert to
         bin_rep_type = globals.params['bin_rep_type']
 
-        if bin_rep_type == 'random':
+        if bin_rep_type == 'random':  # for CSAW-M paper, we alway used 'random'
             pos = 'last'  # always last
         else:
             if rate == '9' or rate == '2':
@@ -473,17 +442,15 @@ def rate_to_text(rate):
         return 'equal'
 
 
-def read_and_resize_imgs(window, threading=False):
+def load_left_right_images(window, threading=False):
     if threading:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             left_thread = executor.submit(logic.read_image_and_resize, window.curr_left_file)
             right_thread = executor.submit(logic.read_image_and_resize, window.curr_right_file)
             left_photo, right_photo = left_thread.result(), right_thread.result()
-
     else:
         left_photo = logic.read_image_and_resize(window.curr_left_file)
         right_photo = logic.read_image_and_resize(window.curr_right_file)
-
     return left_photo, right_photo
 
 

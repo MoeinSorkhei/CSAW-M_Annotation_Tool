@@ -1,48 +1,9 @@
 from PIL import Image, ImageTk
-from matplotlib import cm
 import pydicom
 import numpy as np
-import os
-import glob
 
 import globals
 from .helper import log
-from . import helper
-
-
-def get_dicom_files_paths(imgs_dir):
-    paths = []
-    for base_path, _, filenames in os.walk(imgs_dir):
-        for f in sorted(filenames):  # always read the files sorted by name
-            if f.endswith('.dcm'):  # might have OS-related files like .DS_Store etc...
-                img_abs_path = os.path.abspath(os.path.join(base_path, f))
-                paths.append(img_abs_path)
-    return paths
-
-
-def dicom_as_dataset(dicom_file):
-    return pydicom.dcmread(dicom_file)
-
-
-def resize_pixel_array(dicom_file, resize_factor, save_dir):
-    dataset = pydicom.dcmread(dicom_file)
-    pixel_array = dataset.pixel_array
-
-    # print('pixel array:', pixel_array.shape)
-    resize_height, resize_width = pixel_array.shape[0] // resize_factor, pixel_array.shape[1] // resize_factor
-
-    import cv2  # should be here
-    resized_pixel_array = cv2.resize(pixel_array, dsize=(resize_width, resize_height))
-
-    # print('resized pixel array shape:', resized_pixel_array.shape)
-
-    dataset.PixelData = resized_pixel_array.tobytes()  # copy the data back to the original data set
-    dataset.Rows, dataset.Columns = resized_pixel_array.shape  # update the information about the shape of the data array
-
-    save_path = os.path.join(save_dir, helper.pure_name(dicom_file))  # in save_dir with the same filename
-    helper.make_dir_if_not_exists(save_dir)
-    dataset.save_as(save_path)
-    log(f'In [resize_pixel_array]: saved resized file to: "{save_path}"')
 
 
 def read_image_and_resize(file, save_to=None, extra_log=True, is_dicom=False):  # note the use of extra_log
@@ -81,15 +42,15 @@ def read_image_and_resize(file, save_to=None, extra_log=True, is_dicom=False):  
 #         print('saved png to:', final_name)
 
 
-def convert_imgs_to_png(source_dir, dest_dir):
-    all_dicoms = sorted(glob.glob(f'{source_dir}/**/*.dcm', recursive=True))  # it assumes '/' path separator
-
-    for dicom_file in all_dicoms:
-        png_file = os.path.join(dest_dir, dicom_file.replace(f'{source_dir}/', '').replace('.dcm', '.png'))  # relative name
-        print(f'Doing for dicom: "{dicom_file}"')
-
-        sub_folders = os.path.split(png_file)[0]
-        helper.make_dir_if_not_exists(sub_folders, verbose=False)  # create all the sub-folders needed
-        read_image_and_resize(dicom_file, save_to=png_file)
-
-    print('In [convert_imgs_to_png]: all done')
+# def convert_imgs_to_png(source_dir, dest_dir):
+#     all_dicoms = sorted(glob.glob(f'{source_dir}/**/*.dcm', recursive=True))  # it assumes '/' path separator
+#
+#     for dicom_file in all_dicoms:
+#         png_file = os.path.join(dest_dir, dicom_file.replace(f'{source_dir}/', '').replace('.dcm', '.png'))  # relative name
+#         print(f'Doing for dicom: "{dicom_file}"')
+#
+#         sub_folders = os.path.split(png_file)[0]
+#         helper.make_dir_if_not_exists(sub_folders, verbose=False)  # create all the sub-folders needed
+#         read_image_and_resize(dicom_file, save_to=png_file)
+#
+#     print('In [convert_imgs_to_png]: all done')

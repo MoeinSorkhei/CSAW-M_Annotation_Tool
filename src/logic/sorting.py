@@ -1,8 +1,6 @@
 import numpy as np
-import os
 import random
 
-import globals
 from .helper import *
 
 
@@ -24,11 +22,6 @@ def bin_paths():
 
 
 def read_imgs_from_bin(which_bin):
-    """
-    Returns image names of a bin in a list.
-    :param which_bin:
-    :return:
-    """
     bin_file = get_bin_path(which_bin)
     with open(bin_file) as f:
         imgs_in_bin = f.read().splitlines()

@@ -1,6 +1,5 @@
 import argparse
 
-import globals
 from gui import *
 from logic import *
 
@@ -114,6 +113,22 @@ def set_global_paths(data_mode, annotator=None):
     # text files for sorted and aborted are always in "../outputs_test/output_annotator"
     globals.params['sorted'] = os.path.join(get_annotator_path(data_mode='test', annotator=annotator), 'sorted.txt')
     globals.params['aborted'] = os.path.join(get_annotator_path(data_mode='test', annotator=annotator), 'aborted.txt')
+
+
+def print_global_paths(annotator=None):
+    orig_rating_str = f'\norig_ratings: {globals.params["orig_ratings"]}' if 'orig_ratings' in globals.params.keys() else ''
+    log(f"\n\n\n\n{'#' * 150}", no_time=True)
+    log(
+        f'In [main]: Checking paths for annotator: {annotator} and output_path: "{globals.params["output_path"]}" done.\n'
+        f"output_path: {globals.params['output_path']}\n"
+        f"ratings: {globals.params['ratings']}"
+        f"discarded: {globals.params['discarded']}\n"
+        f"error: {globals.params['error']}\n"
+        f"sorted: {globals.params['sorted']}\n"
+        f"aborted: {globals.params['aborted']}\n"
+        f"{orig_rating_str}")
+    log(f"{'#' * 150}", no_time=True)
+
 
 def get_annotator_path(data_mode, annotator):
     return os.path.join(globals.params[f'output_path_{data_mode}'], f'output_{annotator}')  # outputs/output_Moein
