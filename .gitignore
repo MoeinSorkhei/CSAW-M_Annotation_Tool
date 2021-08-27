@@ -5,6 +5,7 @@ data/
 outputs/
 test_results/
 outputs_test/*
+outputs_train/*
 
 
 *.idea

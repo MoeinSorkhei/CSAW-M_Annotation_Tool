@@ -1,5 +1,6 @@
 import argparse
 
+import globals
 from gui import *
 from logic import *
 
@@ -22,6 +23,7 @@ def read_args_and_adjust():
 
     if arguments.debug:
         globals.debug = True
+        globals.params['resize_factor'] = 2
 
     if arguments.resize_factor:
         globals.params['resize_factor'] = arguments.resize_factor
@@ -64,9 +66,8 @@ def manage_sessions_and_run(args):
 
     # make seed list for annotator if this is the first time
     if args.session_name == 'sort' and args.data_mode == 'test' and args.new:
-        raise NotImplementedError('The test set cannot be annotated right now since the data is private')
-        # log('In [main]: Creating the seed list for the annotator...')
-        # data_prep.make_seed_list()
+        write_list_to_file(globals.seed_list, globals.params['sorted'])
+        log(f'Wrote seed list of len {len(globals.seed_list)} to: "{globals.params["sorted"]}"')
 
     # log indicating start of a session
     log(f"\n\n\n\n{'*' * 150} \n{'*' * 150} \n{'*' * 150} \n{'*' * 150}", no_time=True)
@@ -81,7 +82,7 @@ def manage_sessions_and_run(args):
             log('In [manage_sessions]: current session date time and the annotator written to the ratings file.\n')
 
     # not_already_sorted, already_sorted, n_bins = retrieve_not_already_sorted_files(session_name, data_mode)
-    img_lst, not_already_sorted, already_sorted, aborted_cases, discarded_cases, n_bins, text = to_be_rated(session_name, data_mode)
+    img_lst, not_already_sorted, already_sorted, aborted_cases, discarded_cases, n_bins, text = to_be_rated(data_mode)
 
     log(f'In [manage_sessions]: \n'
         f'read img_list of len: {len(img_lst)}\n'
@@ -102,28 +103,17 @@ def manage_sessions_and_run(args):
     show_window_with_keyboard_input(not_already_sorted, already_sorted, session_name, data_mode, annotator, ui_verbosity, n_bins)
 
 
-def set_global_paths(session_name, data_mode, annotator=None, other_annotator=None, create_registry=False):
-    if data_mode == 'train':
-        annotator_path = get_annotator_path(data_mode, annotator)
-        globals.params['output_path'] = annotator_path
-        globals.params['sorted'] = os.path.join(annotator_path, 'sorted.txt')
-        globals.params['discarded'] = os.path.join(annotator_path, 'discarded.txt')
-        globals.params['aborted'] = os.path.join(annotator_path, 'aborted.txt')
-        globals.params['error'] = os.path.join(annotator_path, 'error.txt')
-        globals.params['ratings'] = os.path.join(annotator_path, 'ratings.txt')
+def set_global_paths(data_mode, annotator=None):
+    # paths for the annotator (which are dependent on data_mode), ie, "../outputs_train/output_annotator" or "../outputs_test/output_annotator"
+    annotator_path = get_annotator_path(data_mode, annotator)
+    globals.params['output_path'] = annotator_path
+    globals.params['ratings'] = os.path.join(annotator_path, 'ratings.txt')
+    globals.params['discarded'] = os.path.join(annotator_path, 'discarded.txt')
+    globals.params['error'] = os.path.join(annotator_path, 'error.txt')  # log.txt path is evaluate using output_path in log() function
 
-    else:
-        annotator_path = get_annotator_path(data_mode, annotator)
-        globals.params['output_path'] = annotator_path
-        globals.params['sorted'] = os.path.join(annotator_path, 'sorted.txt')
-        globals.params['discarded'] = os.path.join(annotator_path, 'discarded.txt')
-        globals.params['aborted'] = os.path.join(annotator_path, 'aborted.txt')
-        globals.params['error'] = os.path.join(annotator_path, 'error.txt')
-
-        if session_name == 'sort':  # sort test
-            globals.params['img_registry'] = os.path.join('..', 'data', 'test_img_registry.txt')
-            globals.params['ratings'] = os.path.join(annotator_path, 'ratings.txt')
-
+    # text files for sorted and aborted are always in "../outputs_test/output_annotator"
+    globals.params['sorted'] = os.path.join(get_annotator_path(data_mode='test', annotator=annotator), 'sorted.txt')
+    globals.params['aborted'] = os.path.join(get_annotator_path(data_mode='test', annotator=annotator), 'aborted.txt')
 
 def get_annotator_path(data_mode, annotator):
     return os.path.join(globals.params[f'output_path_{data_mode}'], f'output_{annotator}')  # outputs/output_Moein
@@ -170,11 +160,19 @@ def main():
     else:
         raise NotImplementedError('In [main]: Config not recognized for determining data_mode')
 
-    set_global_paths(session_name=args.session_name, data_mode=data_mode, annotator=args.annotator)
-    print_global_paths(annotator=args.annotator)
-    make_dir_if_not_exists(globals.params['output_path'])
+    # setting all the needed global paths based on data_mode and annotator
+    set_global_paths(data_mode=data_mode, annotator=args.annotator)
 
-    if args.session_name == 'split':  # splitting - no need to indicate annotator
+    # if session_name is split, sorted text file should necessarily exist
+    if args.session_name == 'split' and not os.path.isfile(globals.params['sorted']):
+        message = f'Sorted file corresponding to annotator "{args.annotator}" does not exist. Is the annotator already existent?'
+        show_visual_error("Arguments specified incorrectly", message)
+        exit(1)
+
+    # from here onwards, the output folder and log file will be created if they do not exist
+    print_global_paths(annotator=args.annotator)
+
+    if args.session_name == 'split':
         split_sorted_list_to_bins(args.n_bins)
     else:  # session for sorting
         manage_sessions_and_run(args)

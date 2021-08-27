@@ -141,13 +141,12 @@ def print_global_paths(annotator=None):
     log(f"\n\n\n\n{'#' * 150}", no_time=True)
     log(
         f'In [main]: Checking paths for annotator: {annotator} and output_path: "{globals.params["output_path"]}" done.\n'
-        # f"registry {globals.params['img_registry']}\n"
         f"output_path: {globals.params['output_path']}\n"
-        f"sorted: {globals.params['sorted']}\n"
-        f"discarded: {globals.params['discarded']}\n"
-        f"aborted: {globals.params['aborted']}\n"
-        f"error: {globals.params['error']}\n"
         f"ratings: {globals.params['ratings']}"
+        f"discarded: {globals.params['discarded']}\n"
+        f"error: {globals.params['error']}\n"
+        f"sorted: {globals.params['sorted']}\n"
+        f"aborted: {globals.params['aborted']}\n"
         f"{orig_rating_str}")
     log(f"{'#' * 150}", no_time=True)
 

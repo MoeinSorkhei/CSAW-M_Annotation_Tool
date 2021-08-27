@@ -280,7 +280,7 @@ class Window:
             stat_text = ''
         # other pages
         else:
-            not_already_sorted, already_sorted = to_be_rated(self.session_name, self.data_mode)[1:3]
+            not_already_sorted, already_sorted = to_be_rated(self.data_mode)[1:3]
             total_sorted_str = f' - Total sorted: {len(already_sorted):,}' if self.session_name == 'sort' else ''
 
             stat_text = f'Rating for image {self.current_index + 1} of {len(self.cases)} - ' \

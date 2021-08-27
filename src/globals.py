@@ -21,5 +21,15 @@ params = {
     "bin_rep_type": 'random',  # or 'last': specifies how the bin representative should be chosen
 
     "max_imgs_per_session": 10000,
-    "resize_factor": 4
+    "resize_factor": 1
 }
+
+# seed list as the starting point to sort test data
+seed_list = [os.path.join(os.path.abspath(params['test_imgs_dir']), filename) for filename in [  # make aboslute paths
+    'test_1.png',  # seed list filenames
+    'test_2.png',
+    'test_3.png',
+    'test_4.png',
+    'test_5.png',
+    'test_6.png',
+]]

@@ -476,13 +476,13 @@ def rate_to_text(rate):
 def read_and_resize_imgs(window, threading=False):
     if threading:
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            left_thread = executor.submit(logic.read_dicom_and_resize, window.curr_left_file)
-            right_thread = executor.submit(logic.read_dicom_and_resize, window.curr_right_file)
+            left_thread = executor.submit(logic.read_image_and_resize, window.curr_left_file)
+            right_thread = executor.submit(logic.read_image_and_resize, window.curr_right_file)
             left_photo, right_photo = left_thread.result(), right_thread.result()
 
     else:
-        left_photo = logic.read_dicom_and_resize(window.curr_left_file)
-        right_photo = logic.read_dicom_and_resize(window.curr_right_file)
+        left_photo = logic.read_image_and_resize(window.curr_left_file)
+        right_photo = logic.read_image_and_resize(window.curr_right_file)
 
     return left_photo, right_photo
 
@@ -526,30 +526,20 @@ def save_to_aborted_list(case, annotator, timestamp):
     log(f'In [save_to_aborted_list]: saved case "{case}" to aborted list.')
 
 
-def to_be_rated(session_name, data_mode):
-    # img_lst = helper.read_file_to_list(globals.params['img_registry'])
-    img_lst = helper.files_with_suffix(globals.params['train_imgs_dir'], '.dcm')
-    if session_name == 'sort':
-        if data_mode == 'test':
-            already_sorted = read_sorted_imgs()
-            n_bins = None
-            text = 'sorted list len'
-        else:
-            n_bins, already_sorted = all_imgs_in_all_bins()  # images that are already entered to bins
-            text = 'total images in the bins'
-        aborted_cases = read_aborted_cases()
-        discarded_cases = read_discarded_cases()
-        not_already_sorted = [img for img in img_lst if
-                              (img not in already_sorted and img not in aborted_cases and img not in discarded_cases)]
-    else:  # variability
-        already_sorted, n_bins, text = read_file_to_list(globals.params['ratings']), None, f'total {session_name} rated images'
-        aborted_cases = discarded_cases = []
-        not_already_sorted = []
-
-        for rating_record in img_lst:
-            left, right = parsed(rating_record, '$')[:2]
-            if not any([f'{left} $ {right}' in item for item in already_sorted]):
-                not_already_sorted.append(rating_record)
+def to_be_rated(data_mode):
+    if data_mode == 'test':
+        img_lst = helper.files_with_suffix(globals.params['test_imgs_dir'], '.png')
+        already_sorted = read_sorted_imgs()
+        n_bins = None
+        text = 'sorted list len'
+    else:
+        img_lst = helper.files_with_suffix(globals.params['train_imgs_dir'], '.png')
+        n_bins, already_sorted = all_imgs_in_all_bins()  # images that are already entered to bins
+        text = 'total images in the bins'
+    aborted_cases = read_aborted_cases()
+    discarded_cases = read_discarded_cases()
+    not_already_sorted = [img for img in img_lst if
+                          (img not in already_sorted and img not in aborted_cases and img not in discarded_cases)]
     return img_lst, not_already_sorted, already_sorted, aborted_cases, discarded_cases, n_bins, text
 
 

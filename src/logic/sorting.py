@@ -53,7 +53,7 @@ def split_sorted_list_to_bins(n_bins):
     for i in range(len(split_arr)):
         filename = os.path.join(globals.params['output_path'], f'bin_{i}.txt')
         write_list_to_file(split_arr[i], filename)
-        log(f'Bin created: {filename}')
+        log(f'Bin created: {filename} with {len(split_arr[i])} file names in it.')
 
     log(f'In [split_sorted_list_to_bins]: writing all the bins to files: done \n')
 
