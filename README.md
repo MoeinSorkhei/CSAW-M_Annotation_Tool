@@ -45,7 +45,7 @@ Below you can see and example window of our annotation tool with query and refer
 `python main.py --annotator [ANNOTATOR] --new --session_name sort --data_mode test`  
 The output will be saved to `outputs_test/output_[ANNOTATOR]`.
 
-- **Step 2**: Once we have created a perfectly sorted list of image names in `outputs_test/output_[ANNOTATOR]`, we can split the sorted list into 8 bins, using the following command (no need to specify `--already` or `--data_mode`, but the annotator should already be existent):  
+- **Step 2**: Once we have created a perfectly sorted list of image names in `outputs_test/output_[ANNOTATOR]`, we can split the sorted list into 8 bins, using the following command (no need to specify `--already` or `--data_mode`, but step 1 should be complete at this point):  
 `python main.py  --annotator [ANNOTATOR] --session_name split --n_bins 8`  
 This will create `outputs_train/output_[ANNOTATOR]` with text files corresponding to the image names in each bins.
 
